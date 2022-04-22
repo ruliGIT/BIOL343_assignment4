@@ -1,0 +1,114 @@
+---
+title: "BIOL 343 - Assignment 4"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+Species: Purple Loosestrife\
+Hypotheses:\
+  i) Galerucella beetle damage of L. salicaria is lower in central than eastern Ontario.\
+  ii) Galerucella beetle damage was higher at sites where the biocontrol agents had been deliberately released than sites where they had not.\
+
+Part A:\
+1. A code chunk loading the required packages.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+```
+
+2. Code importing the data frame and checking it with the usual data-checking function.
+```{r}
+MyData<-read.csv("data/04_loosestrife_F2020.csv")
+dim(MyData)
+head(MyData)
+tail(MyData)
+summary(MyData)
+str(MyData)
+```
+2.5 Transformations to Data
+```{r}
+MyData<-MyData%>%
+  filter(region == "Central" | region == "East")%>%
+  droplevels
+```
+
+
+3. Code that makes a graph to evaluate the hypothesis that damage is lower in Central sites than Eastern sites (H1a).
+```{r}
+MyData %>% 
+  group_by(MyData$region) %>%
+  ggplot() + geom_point(mapping = aes(x=region, y=damage, size=5, alpha=I(0.2) ), data=MyData) +
+  geom_point(mapping = aes(x=region, y=mean(damage, na.rm=TRUE), size=5, colour=region,, alpha=I(0.2) ), data=MyData) +
+  theme_classic() + theme(legend.position = "none") + 
+  labs(caption = "Figure 1: Scatter plot contrasting damage index in the Central sites compared to Eastern sites.")
+```
+```{r}
+MyData %>%
+  group_by(MyData$region) %>%
+  summarize(Mean=mean(damage, na.rm=TRUE), sd=sd(damage, na.rm=TRUE))
+```
+
+
+4. Code that executes a t-test of the hypothesis that damage is lower in the Central sites compared to Eastern sites (H1a).
+```{r}
+t.test(damage~region, data=MyData)
+
+```
+
+5. Code a linear model of the hypothesis that damage is different between Central and Eastern sites (H1b). 
+```{r}
+CatMod<-lm(damage~region, data=MyData)
+summary(CatMod)
+
+ggplot() + geom_boxplot(mapping = aes(x=region, y=damage), data=MyData) +
+  theme_classic() + theme(legend.position = "none") + 
+  labs(caption = "Figure 2: Boxplot contrasting damage index in the Central sites compared to Eastern sites.")
+```
+
+6. Two-tailed test yielded positive estimate results. P values indicate that, with regards to H1, damage is not statistically different in the Central sites compared to the Eastern sites. This means that damage is not statistically lower in one region more than the other.
+
+Part B:\
+7. Code that makes a graph to evaluate the hypothesis that damage differs between release and non-release sites using all the data (H2).
+```{r}
+MyData %>% 
+  group_by(MyData$release) %>%
+  ggplot() + geom_point(mapping = aes(x=release, y=damage, size=5, alpha=I(0.2) ), data=MyData) +
+  geom_point(mapping = aes(x=release, y=mean(damage, na.rm=TRUE), size=5, colour=release,, alpha=I(0.2) ), data=MyData) +
+  theme_classic() + theme(legend.position = "none") + 
+  labs(caption = "Figure 3: Scatter plot contrasting damage index in the release sites compared to non-release sites.")
+```
+```{r}
+MyData %>%
+  group_by(MyData$release) %>%
+  summarize(Mean=mean(damage, na.rm=TRUE), sd=sd(damage, na.rm=TRUE))
+```
+
+8. Code that tests for a difference in mean damage between release and non-release sites (H2) using first a t-test and then a linear model (ANOVA).
+```{r}
+#t-test
+t.test(damage~release, data=MyData)
+
+#linear model (ANOVA)
+CatMod2<-lm(damage~release, data=MyData)
+summary(CatMod2)
+
+ggplot() + geom_boxplot(mapping = aes(x=release, y=damage), data=MyData) +
+  theme_classic() + theme(legend.position = "none") + 
+  labs(caption = "Figure 4: Boxplot contrasting damage index in the release sites compared to non-release sites.")
+```
+
+9. Two-tailed test yielded positive estimate results, with a negative t score and a p value of <0.05. Therefore, the null hypothesis is rejected. P values indicate that, with regards to H2, damage is statistically different in the release sites compared to the non-release sites.
+
+Part C:\
+10. Code a linear model that tests BOTH H1b and H2 in the same model (i.e. a multifactor ANOVA)
+```{r}
+CatMod3<-lm(damage ~ region + release, data=MyData)
+anova(CatMod3)
+summary(CatMod3)
+```
+
+11. Multifactor anova test yielded a p value of >0.05. Looking at the summary, we can see that it the p value pertaining to region differences that holds a greater p value and that the release vs non-release sites have a p value that is within the threshold. 
+
+
